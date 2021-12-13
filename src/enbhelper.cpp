@@ -1,10 +1,9 @@
+#pragma warning(disable: 4100)
+
 #include "enbhelper.h"
-
-
-bool inInterior(RE::PlayerCharacter* player)
-{
-	return (player && player->parentCell && player->parentCell->IsInteriorCell());
-}
+#ifdef FALLOUT4
+#include "RE/Sky.h"
+#endif
 
 bool isLoaded = false;
 
@@ -40,13 +39,10 @@ bool GetWeatherTransition(float& t)
 bool GetCurrentWeather(DWORD& id)
 {
 	const auto sky = RE::Sky::GetSingleton();
-	const auto player = RE::PlayerCharacter::GetSingleton();
-
-	if (inInterior(player) && player->parentCell->lightingTemplate) {
-		id = player->parentCell->lightingTemplate->GetFormID();
-		return true;
-	} else if (sky && sky->currentWeather) {
+	
+	if (sky && sky->currentWeather) {
 		id = sky->currentWeather->GetFormID();
+		logger::info("{} current"sv, sky->lastWeather->GetFormID());
 		return true;
 	}
 
@@ -56,12 +52,8 @@ bool GetCurrentWeather(DWORD& id)
 bool GetOutgoingWeather(DWORD& id)
 {
 	const auto sky = RE::Sky::GetSingleton();
-	const auto player = RE::PlayerCharacter::GetSingleton();
-
-	if (inInterior(player) && player->parentCell->lightingTemplate) {
-		id = player->parentCell->lightingTemplate->GetFormID();
-		return true;
-	} else if (sky && sky->lastWeather) {
+	
+	if (sky && sky->lastWeather) {
 		id = sky->lastWeather->GetFormID();
 		return true;
 	}
@@ -75,6 +67,7 @@ bool GetCurrentLocationID(DWORD& id)
 
 	if (player && player->currentLocation) {
 		id = player->currentLocation->GetFormID();
+		logger::info("{} location"sv, player->currentLocation->GetFormID());
 		return true;
 	}
 
@@ -85,10 +78,17 @@ bool GetWorldSpaceID(DWORD& id)
 {
 	const auto player = RE::PlayerCharacter::GetSingleton();
 
-	if (player && player->GetWorldspace()) {
+	#ifdef FALLOUT4
+	if (player && player->cachedWorldspace) {
+		id = player->cachedWorldspace->GetFormID();
+		return true;
+	}
+	#else
+	if (player && player-) {
 		id = player->GetWorldspace()->GetFormID();
 		return true;
 	}
+	#endif
 
 	return false;
 }
@@ -109,6 +109,7 @@ bool GetSkyMode(DWORD& mode)
 // Papyrus Weather.GetClassification
 int32_t GetClassification(RE::TESWeather* weather)
 {
+	#ifndef FALLOUT4
 	typedef RE::TESWeather::WeatherDataFlag Flags;
 
 	const auto flags = weather->data.flags;
@@ -121,6 +122,7 @@ int32_t GetClassification(RE::TESWeather* weather)
 		return 2;
 	if ((flags & Flags::kSnow) != Flags::kNone)
 		return 3;
+	#endif
 
 	return 0xFFFFFFFF;
 }

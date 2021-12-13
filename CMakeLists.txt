@@ -10,6 +10,9 @@ option(BUILD_SKYRIM_AE "Build for Skyrim AE instead of SE" OFF)
 
 option(BUILD_SKYRIM_VR "Build for Skyrim VR" OFF)
 
+option(BUILD_FALLOUT_4 "Build for Fallout 4" OFF)
+
+
 # ---- Cache build vars ----
 
 macro(set_from_environment VARIABLE)
@@ -36,11 +39,19 @@ set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>" CACHE STR
 
 # ---- Project ----
 
+if (BUILD_FALLOUT_4)
+project(
+	enbhelperf4
+	VERSION 1.0.0
+	LANGUAGES CXX
+)
+else()
 project(
 	enbhelperse
 	VERSION 1.0.0
 	LANGUAGES CXX
 )
+endif (BUILD_FALLOUT_4)
 
 configure_file(
 	${CMAKE_CURRENT_SOURCE_DIR}/cmake/Version.h.in
@@ -85,13 +96,16 @@ set(Boost_USE_STATIC_LIBS ON)
 
 # ---- Dependencies ----
 
-if (BUILD_SKYRIM_AE OR BUILD_SKYRIM_VR)
+if(BUILD_SKYRIM_AE OR BUILD_SKYRIM_VR)
 	add_subdirectory("extern/CommonLibAEVR" CommonLibSSE)
-else ()
+elseif(BUILD_FALLOUT_4)
+	add_subdirectory("extern/CommonLibF4/CommonLibF4" CommonLibF4)
+else()
 	add_subdirectory("extern/CommonLibSSE" CommonLibSSE)
-endif (BUILD_SKYRIM_AE OR BUILD_SKYRIM_VR)
+endif()
 
 find_package(spdlog REQUIRED CONFIG)
+find_package(mmio REQUIRED CONFIG)
 
 # ---- Add source files ----
 
@@ -135,12 +149,21 @@ target_include_directories(
 		${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
+if(BUILD_FALLOUT_4)
+target_link_libraries(
+	${PROJECT_NAME}
+	PRIVATE
+		CommonLibF4::CommonLibF4
+		spdlog::spdlog
+)
+else()
 target_link_libraries(
 	${PROJECT_NAME}
 	PRIVATE
 		CommonLibSSE::CommonLibSSE
 		spdlog::spdlog
 )
+endif()
 
 if (MSVC)
 	if (BUILD_RELEASE)
@@ -154,6 +177,10 @@ if (MSVC)
 	if (BUILD_SKYRIM_VR)
 		add_compile_definitions(SKYRIMVR)
 	endif (BUILD_SKYRIM_VR)
+
+	if(BUILD_FALLOUT_4)
+		add_compile_definitions(FALLOUT4)
+	endif()
 
 	target_compile_options(
 		${PROJECT_NAME}
