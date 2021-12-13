@@ -37,7 +37,7 @@ set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>" CACHE STR
 # ---- Project ----
 
 project(
-	UniqueMapWeathers
+	enbhelperse
 	VERSION 1.0.0
 	LANGUAGES CXX
 )
@@ -140,7 +140,6 @@ target_link_libraries(
 	PRIVATE
 		CommonLibSSE::CommonLibSSE
 		spdlog::spdlog
-		jsoncpp_static
 )
 
 if (MSVC)

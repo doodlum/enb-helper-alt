@@ -1,10 +1,5 @@
 
-#ifndef NDEBUG
-	#define _AMD64_
-	#include <debugapi.h>
-#endif
-
-#include "Hooks.h"
+#include "enbhelper.h"
 
 void InitLogger()
 {
@@ -52,6 +47,8 @@ extern "C" DLLEXPORT bool SKSEAPI SKSEPlugin_Load(const SKSE::LoadInterface* a_s
 	logger::info("{} loaded"sv, Version::PROJECT);
 
 	SKSE::Init(a_skse);
+
+	isLoaded = true;
 	
 	return true;
 }
