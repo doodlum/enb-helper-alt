@@ -2,7 +2,11 @@
 
 #include <windows.h>
 
-extern bool isLoaded;
+#ifdef FALLOUT4
+#define HELPER_DLL "enbhelperf4.dll"
+#else
+#define HELPER_DLL "enbhelperse.dll"
+#endif
 
 struct NiTransform
 {
@@ -12,6 +16,8 @@ struct NiTransform
 	float pos_z;
 	float scale;
 };
+
+extern bool bLoaded;
 
 extern "C" DLLEXPORT bool IsLoaded();
 

@@ -104,7 +104,7 @@ namespace RE
 
 		static Sky* GetSingleton()
 		{
-			REL::Relocation<Sky**> singleton{ REL::ID(1445899) };
+			REL::Relocation<Sky**> singleton{ REL::ID(302296) };
 			return *singleton;
 		}
 

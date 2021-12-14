@@ -12,6 +12,7 @@ option(BUILD_SKYRIM_VR "Build for Skyrim VR" OFF)
 
 option(BUILD_FALLOUT_4 "Build for Fallout 4" OFF)
 
+option(BUILD_LIGHTING_TEMPLATE "Use Lighting Template IDs for interiors" OFF)
 
 # ---- Cache build vars ----
 
@@ -168,18 +169,22 @@ endif()
 if (MSVC)
 	if (BUILD_RELEASE)
 		add_compile_definitions(NDEBUG)
-	endif (BUILD_RELEASE)
+	endif()
 
 	if (BUILD_SKYRIM_AE)
 		add_compile_definitions(SKYRIMAE)
-	endif (BUILD_SKYRIM_AE)
+	endif()
 
 	if (BUILD_SKYRIM_VR)
 		add_compile_definitions(SKYRIMVR)
-	endif (BUILD_SKYRIM_VR)
+	endif()
 
 	if(BUILD_FALLOUT_4)
 		add_compile_definitions(FALLOUT4)
+	endif()
+
+	if(BUILD_LIGHTING_TEMPLATE)
+		add_compile_definitions(LIGHTING_TEMPLATE)
 	endif()
 
 	target_compile_options(
