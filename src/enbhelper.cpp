@@ -1,6 +1,3 @@
-#pragma warning(disable: 4100)
-
-
 #include "enbhelper.h"
 
 bool bLoaded = false;
@@ -11,7 +8,6 @@ bool bLoaded = false;
 
 extern "C" DLLEXPORT bool GetTime(float& time)
 {
-	logger::info("GetTime");
 	const auto sky = RE::Sky::GetSingleton();
 
 	if (sky) {
@@ -24,7 +20,6 @@ extern "C" DLLEXPORT bool GetTime(float& time)
 
 extern "C" DLLEXPORT bool GetWeatherTransition(float& t)
 {
-	logger::info("GetWeatherTransition");
 	const auto sky = RE::Sky::GetSingleton();
 
 	if (sky) {
@@ -75,7 +70,6 @@ bool GetOutgoingWeather(DWORD& id)
 #else
 extern "C" DLLEXPORT bool GetCurrentWeather(DWORD& id)
 {
-	logger::info("GetCurrentWeather");
 	const auto sky = RE::Sky::GetSingleton();
 	
 	if (sky && sky->currentWeather) {
@@ -88,7 +82,6 @@ extern "C" DLLEXPORT bool GetCurrentWeather(DWORD& id)
 
 extern "C" DLLEXPORT bool GetOutgoingWeather(DWORD& id)
 {
-	logger::info("GetOutgoingWeather");
 	const auto sky = RE::Sky::GetSingleton();
 	
 	if (sky && sky->lastWeather) {
@@ -102,20 +95,27 @@ extern "C" DLLEXPORT bool GetOutgoingWeather(DWORD& id)
 
 extern "C" DLLEXPORT bool GetCurrentLocationID(DWORD& id)
 {
-	logger::info("GetCurrentLocationID");
 	const auto player = RE::PlayerCharacter::GetSingleton();
 
+#ifndef SKYRIMVR
 	if (player && player->currentLocation) {
 		id = player->currentLocation->GetFormID();
 		return true;
 	}
-
+#else
+	if (player) {
+		const auto currentLocation = player->GetCurrentLocation();
+		if (currentLocation) {
+			id = currentLocation->GetFormID();
+			return true;
+		}
+	}
+#endif
 	return false;
 }
 
 extern "C" DLLEXPORT bool GetWorldSpaceID(DWORD& id)
 {
-	logger::info("GetWorldSpaceID");
 	const auto player = RE::PlayerCharacter::GetSingleton();
 
 	#ifdef FALLOUT4
@@ -135,7 +135,6 @@ extern "C" DLLEXPORT bool GetWorldSpaceID(DWORD& id)
 
 extern "C" DLLEXPORT bool GetSkyMode(DWORD& mode)
 {
-	logger::info("GetSkyMode");
 	const auto sky = RE::Sky::GetSingleton();
 
 	if (sky) {
@@ -178,9 +177,8 @@ int32_t GetClassification(RE::TESWeather* weather)
 	return 0xFFFFFFFF;
 }
 
-bool HELPER_API GetCurrentWeatherClassification(int& c)
+extern "C" DLLEXPORT bool GetCurrentWeatherClassification(int& c)
 {
-	logger::info("GetCurrentWeatherClassification");
 	const auto sky = RE::Sky::GetSingleton();
 	if (sky && sky->currentWeather) {
 		c = GetClassification(sky->currentWeather);
@@ -192,7 +190,6 @@ bool HELPER_API GetCurrentWeatherClassification(int& c)
 
 extern "C" DLLEXPORT bool GetOutgoingWeatherClassification(int& c)
 {
-	logger::info("GetOutgoingWeatherClassification");
 	const auto sky = RE::Sky::GetSingleton();
 	if (sky && sky->currentWeather) {
 		c = GetClassification(sky->currentWeather);
@@ -203,9 +200,8 @@ extern "C" DLLEXPORT bool GetOutgoingWeatherClassification(int& c)
 }
 
 // Credits aers
-extern "C" DLLEXPORT bool GetPlayerCameraTransformMatrices(NiTransform& m_local, NiTransform& m_world, NiTransform& m_oldworld)
+extern "C" DLLEXPORT bool GetPlayerCameraTransformMatrices(RE::NiTransform& m_local, RE::NiTransform& m_world, RE::NiTransform& m_oldworld)
 {
-	logger::info("GetPlayerCameraTransformMatrices");
 	const auto playerCamera = RE::PlayerCamera::GetSingleton();
 	if (playerCamera && playerCamera->cameraRoot) {
 		const auto cameraNode = playerCamera->cameraRoot;

@@ -8,14 +8,14 @@
 #define HELPER_DLL "enbhelperse.dll"
 #endif
 
-struct NiTransform
-{
-	float rot[9];
-	float pos_x;
-	float pos_y;
-	float pos_z;
-	float scale;
-};
+// struct ENBAPI::NiTransform
+// {
+// 	float rot[9];
+// 	float pos_x;
+// 	float pos_y;
+// 	float pos_z;
+// 	float scale;
+// };
 
 extern bool bLoaded;
 
@@ -29,7 +29,7 @@ extern "C" DLLEXPORT bool GetCurrentWeather(DWORD& id);
 
 extern "C" DLLEXPORT bool GetOutgoingWeather(DWORD& id);
 
-extern "C" DLLEXPORT bool GetPlayerCameraTransformMatrices(NiTransform& m_local, NiTransform& m_world, NiTransform& m_oldworld);
+extern "C" DLLEXPORT bool GetPlayerCameraTransformMatrices(RE::NiTransform& m_local, RE::NiTransform& m_world, RE::NiTransform& m_oldworld);
 
 extern "C" DLLEXPORT bool GetCurrentLocationID(DWORD& id);
 

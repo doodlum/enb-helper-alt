@@ -1,18 +1,18 @@
 cmake_minimum_required(VERSION 3.20)
+set(NAME "ENBHelper")
+set(VERSION 1.0.0)
 
 # ---- Options ----
 
-option(BUILD_RELEASE "Build for release (No Debug)" ON)
+option(COPY_BUILD "Copy the build output to the game directory." FALSE)
 
-option(COPY_BUILD "Copy the build output to the Skyrim directory." OFF)
+option(BUILD_DEBUG "Enable debugging options" OFF)
 
-option(BUILD_SKYRIM_AE "Build for Skyrim AE instead of SE" OFF)
+option(BUILD_SKYRIMAE "Build for Skyrim AE" OFF)
+option(BUILD_SKYRIMVR "Build for Skyrim VR" OFF)
 
-option(BUILD_SKYRIM_VR "Build for Skyrim VR" OFF)
+option(BUILD_SKYRIMVR "Build for Fallout 4" OFF)
 
-option(BUILD_FALLOUT_4 "Build for Fallout 4" OFF)
-
-option(BUILD_LIGHTING_TEMPLATE "Use Lighting Template IDs for interiors" OFF)
 
 # ---- Cache build vars ----
 
@@ -22,37 +22,48 @@ macro(set_from_environment VARIABLE)
 	endif ()
 endmacro()
 
-set_from_environment(Skyrim64Path)
-set_from_environment(VCPKG_ROOT)
+if(BUILD_SKYRIMVR)
+	add_compile_definitions(SKYRIMVR)
+	add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
+	set(CommonLibName "CommonLibVR")
+	set_from_environment(SkyrimVRPath)
+	set(GamePath ${SkyrimVRPath})
+	set(GameVersion "Skyrim VR")
+elseif(BUILD_SKYRIMAE)
+	add_compile_definitions(SKYRIMAE)
+	set(CommonLibName "CommonLibSSE")
+	set_from_environment(Skyrim64Path)
+	set(GamePath ${Skyrim64Path})
+	set(GameVersion "Skyrim AE")
+elseif(BUILD_FALLOUT4)
+	add_compile_definitions(FALLOUT4)
+	set(CommonLibName "CommonLibF4")
+	set_from_environment(Fallout4Path)
+	set(GamePath ${Fallout4Path})
+	set(GameVersion "Fallout 4")
+else()
+	add_compile_definitions(SKYRIMSE)
+	set(CommonLibName "CommonLibSSE")
+	set_from_environment(Skyrim64Path)
+	set(GamePath ${Skyrim64Path})
+	set(GameVersion "Skyrim SSE")
+endif()
 
-if (DEFINED VCPKG_ROOT)
-	set(CMAKE_TOOLCHAIN_FILE "${VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
-	set(VCPKG_TARGET_TRIPLET "x64-windows-static" CACHE STRING "")
-else ()
-	message(
-		WARNING
-		"Variable VCPKG_ROOT is not set. Continuing without vcpkg."
-	)
-endif ()
+if(NOT BUILD_DEBUG)
+	add_compile_definitions(NDEBUG)
+endif()
 
 set(Boost_USE_STATIC_RUNTIME OFF CACHE BOOL "")
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>" CACHE STRING "")
 
+
 # ---- Project ----
 
-if (BUILD_FALLOUT_4)
 project(
-	enbhelperf4
-	VERSION 1.0.0
+	${NAME}
+	VERSION ${VERSION}
 	LANGUAGES CXX
 )
-else()
-project(
-	enbhelperse
-	VERSION 1.0.0
-	LANGUAGES CXX
-)
-endif (BUILD_FALLOUT_4)
 
 configure_file(
 	${CMAKE_CURRENT_SOURCE_DIR}/cmake/Version.h.in
@@ -75,6 +86,7 @@ if(PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
 	)
 endif()
 
+
 # ---- Globals ----
 
 if (MSVC)
@@ -94,29 +106,32 @@ set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_DEBUG OFF)
 
 set(Boost_USE_STATIC_LIBS ON)
 
-
 # ---- Dependencies ----
 
-if(BUILD_SKYRIM_AE OR BUILD_SKYRIM_VR)
-	add_subdirectory("extern/CommonLibAEVR" CommonLibSSE)
-elseif(BUILD_FALLOUT_4)
-	add_subdirectory("extern/CommonLibF4/CommonLibF4" CommonLibF4)
+if(BUILD_SKYRIMVR)
+	add_subdirectory("external/CommonLibVR" CommonLibVR)
+elseif(BUILD_SKYRIMAE)
+	add_subdirectory("external/CommonLibAE" CommonLibSSE)
+elseif(BUILD_FALLOUT4)
+	add_subdirectory("external/CommonLibF4/CommonLibF4" CommonLibF4)
 else()
-	add_subdirectory("extern/CommonLibSSE" CommonLibSSE)
+	add_subdirectory("external/CommonLibSSE" CommonLibSSE)
 endif()
 
-find_package(spdlog REQUIRED CONFIG)
 find_package(mmio REQUIRED CONFIG)
+find_package(spdlog CONFIG REQUIRED)
 
 # ---- Add source files ----
 
-include (cmake/sourcelist.cmake)
+include(cmake/headerlist.cmake)
+include(cmake/sourcelist.cmake)
 
 source_group(
 	TREE
 		${CMAKE_CURRENT_SOURCE_DIR}
 	FILES
-		${SOURCES}
+		${headers}
+		${sources}
 )
 
 source_group(
@@ -126,67 +141,41 @@ source_group(
 		${CMAKE_CURRENT_BINARY_DIR}/include/Version.h
 )
 
-
 # ---- Create DLL ----
 
 add_library(
 	${PROJECT_NAME}
 	SHARED
-	${SOURCES}
+	${headers}
+	${sources}
 	${CMAKE_CURRENT_BINARY_DIR}/include/Version.h
 	${CMAKE_CURRENT_BINARY_DIR}/version.rc
+	.clang-format
+	.editorconfig
 )
 
 target_compile_features(
 	${PROJECT_NAME}
 	PRIVATE
-		cxx_std_20
+		cxx_std_23
 )
 
 target_include_directories(
 	${PROJECT_NAME}
 	PRIVATE
 		${CMAKE_CURRENT_BINARY_DIR}/include
-		${CMAKE_CURRENT_SOURCE_DIR}/src
+		${CMAKE_CURRENT_SOURCE_DIR}/src/C++
+		${CommonLibPath}/x64/Release
 )
 
-if(BUILD_FALLOUT_4)
 target_link_libraries(
 	${PROJECT_NAME}
 	PRIVATE
-		CommonLibF4::CommonLibF4
+		${CommonLibName}::${CommonLibName}
 		spdlog::spdlog
 )
-else()
-target_link_libraries(
-	${PROJECT_NAME}
-	PRIVATE
-		CommonLibSSE::CommonLibSSE
-		spdlog::spdlog
-)
-endif()
 
 if (MSVC)
-	if (BUILD_RELEASE)
-		add_compile_definitions(NDEBUG)
-	endif()
-
-	if (BUILD_SKYRIM_AE)
-		add_compile_definitions(SKYRIMAE)
-	endif()
-
-	if (BUILD_SKYRIM_VR)
-		add_compile_definitions(SKYRIMVR)
-	endif()
-
-	if(BUILD_FALLOUT_4)
-		add_compile_definitions(FALLOUT4)
-	endif()
-
-	if(BUILD_LIGHTING_TEMPLATE)
-		add_compile_definitions(LIGHTING_TEMPLATE)
-	endif()
-
 	target_compile_options(
 		${PROJECT_NAME}
 		PRIVATE
@@ -222,9 +211,9 @@ if (MSVC)
 			/external:W0
 
 			/W4	# Warning level
-			/WX	# Warning level (warnings are errors)
+			/WX # Warning level (warnings are errors)
 
-			"$<$<CONFIG:DEBUG>:>"
+			"$<$<CONFIG:DEBUG>:/bigobj>"
 			"$<$<CONFIG:RELEASE>:/Zc:inline;/JMC-;/Ob3>"
 	)
 
@@ -236,6 +225,10 @@ if (MSVC)
 			"$<$<CONFIG:DEBUG>:/INCREMENTAL;/OPT:NOREF;/OPT:NOICF>"
 			"$<$<CONFIG:RELEASE>:/INCREMENTAL:NO;/OPT:REF;/OPT:ICF;/DEBUG:FULL>"
 	)
+
+	# fix a warning with /Ob2 being overridden with /Ob3
+	string(REPLACE "/Ob2" "/Ob3" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
+
 endif ()
 
 target_precompile_headers(
@@ -247,17 +240,17 @@ target_precompile_headers(
 # ---- Post build ----
 
 if (COPY_BUILD)
-	if (DEFINED Skyrim64Path)
+	if (DEFINED GamePath)
 		add_custom_command(
 			TARGET ${PROJECT_NAME}
 			POST_BUILD
-			COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${PROJECT_NAME}> ${Skyrim64Path}/Data/SKSE/Plugins/
-			COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_PDB_FILE:${PROJECT_NAME}> ${Skyrim64Path}/Data/SKSE/Plugins/
+			COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${PROJECT_NAME}> ${GamePath}/Data/SKSE/Plugins/
+			COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_PDB_FILE:${PROJECT_NAME}> ${GamePath}/Data/SKSE/Plugins/
 		)
 	else ()
 		message(
 			WARNING
-			"Variable Skyrim64Path is not defined. Skipping post-build copy command."
+			"Variable ${GamePath} is not defined. Skipping post-build copy command."
 		)
 	endif ()
 endif ()
