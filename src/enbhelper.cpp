@@ -47,11 +47,19 @@ extern "C" DLLEXPORT bool GetCurrentWeather(DWORD& id)
 
 	if (validInterior(player)) {
 		if (sky->currentRoom) {
-			const auto currentRoom = static_cast<RE::ExtraRoomRefData*>(sky->currentRoom.get()->extraList.GetByType(RE::ExtraDataType::kRoomRefData));
-			id = currentRoom->data->lightingTemplate->GetFormID();
-		} else {
-			id = player->parentCell->lightingTemplate->GetFormID();
+			const auto room = sky->currentRoom.get();
+			if (room) {
+				const auto roomRef = room->extraList.GetByType(RE::ExtraDataType::kRoomRefData);
+				if (roomRef) {
+					const auto roomRefData = static_cast<RE::ExtraRoomRefData*>(roomRef)->data;
+					if (roomRefData && roomRefData->lightingTemplate) {
+						id = roomRefData->lightingTemplate->GetFormID();
+						return true;
+					}
+				}
+			}
 		}
+		id = player->parentCell->lightingTemplate->GetFormID();
 		return true;
 	} else if (sky && sky->currentWeather) {
 		id = sky->currentWeather->GetFormID();
@@ -68,11 +76,19 @@ bool GetOutgoingWeather(DWORD& id)
 
 	if (validInterior(player)) {
 		if (sky->previousRoom) {
-			const auto previousRoom = static_cast<RE::ExtraRoomRefData*>(sky->previousRoom.get()->extraList.GetByType(RE::ExtraDataType::kRoomRefData));
-			id = previousRoom->data->lightingTemplate->GetFormID();
-		} else {
-			id = player->parentCell->lightingTemplate->GetFormID();
+			const auto room = sky->previousRoom.get();
+			if (room) {
+				const auto roomRef = room->extraList.GetByType(RE::ExtraDataType::kRoomRefData);
+				if (roomRef) {
+					const auto roomRefData = static_cast<RE::ExtraRoomRefData*>(roomRef)->data;
+					if (roomRefData && roomRefData->lightingTemplate) {
+						id = roomRefData->lightingTemplate->GetFormID();
+						return true;
+					}
+				}
+			}
 		}
+		id = 0;
 		return true;
 	} else if (sky && sky->lastWeather) {
 		id = sky->lastWeather->GetFormID();
