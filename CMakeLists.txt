@@ -118,7 +118,6 @@ else()
 	add_subdirectory("external/CommonLibSSE" CommonLibSSE)
 endif()
 
-find_package(mmio REQUIRED CONFIG)
 find_package(spdlog CONFIG REQUIRED)
 
 # ---- Add source files ----
