@@ -1,5 +1,4 @@
 cmake_minimum_required(VERSION 3.20)
-set(NAME "ENBHelper")
 set(VERSION 1.0.0)
 
 # ---- Options ----
@@ -11,7 +10,7 @@ option(BUILD_DEBUG "Enable debugging options" OFF)
 option(BUILD_SKYRIMAE "Build for Skyrim AE" OFF)
 option(BUILD_SKYRIMVR "Build for Skyrim VR" OFF)
 
-option(BUILD_SKYRIMVR "Build for Fallout 4" OFF)
+option(BUILD_FALLOUT4 "Build for Fallout 4" OFF)
 
 
 # ---- Cache build vars ----
@@ -23,6 +22,7 @@ macro(set_from_environment VARIABLE)
 endmacro()
 
 if(BUILD_SKYRIMVR)
+	set(NAME "ENBHelperVR")
 	add_compile_definitions(SKYRIMVR)
 	add_compile_definitions(_CRT_SECURE_NO_WARNINGS)
 	set(CommonLibName "CommonLibVR")
@@ -30,18 +30,21 @@ if(BUILD_SKYRIMVR)
 	set(GamePath ${SkyrimVRPath})
 	set(GameVersion "Skyrim VR")
 elseif(BUILD_SKYRIMAE)
+	set(NAME "ENBHelperSE")
 	add_compile_definitions(SKYRIMAE)
 	set(CommonLibName "CommonLibSSE")
 	set_from_environment(Skyrim64Path)
 	set(GamePath ${Skyrim64Path})
 	set(GameVersion "Skyrim AE")
 elseif(BUILD_FALLOUT4)
+	set(NAME "ENBHelperF4")
 	add_compile_definitions(FALLOUT4)
 	set(CommonLibName "CommonLibF4")
 	set_from_environment(Fallout4Path)
 	set(GamePath ${Fallout4Path})
 	set(GameVersion "Fallout 4")
 else()
+	set(NAME "ENBHelperSE")
 	add_compile_definitions(SKYRIMSE)
 	set(CommonLibName "CommonLibSSE")
 	set_from_environment(Skyrim64Path)
@@ -51,6 +54,10 @@ endif()
 
 if(NOT BUILD_DEBUG)
 	add_compile_definitions(NDEBUG)
+endif()
+
+if(NOT BUILD_FALLOUT4)
+	add_compile_definitions(ENBHELPER_CUSTOM)
 endif()
 
 set(Boost_USE_STATIC_RUNTIME OFF CACHE BOOL "")
